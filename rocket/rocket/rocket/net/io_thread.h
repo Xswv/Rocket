@@ -18,7 +18,7 @@ class IOThread {
 
   void start();
 
-  
+  void join();
 
  public:
   static void* Main(void* arg);

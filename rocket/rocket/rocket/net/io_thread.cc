@@ -73,6 +73,8 @@ void IOThread::start() {
   sem_post(&m_start_semaphore);
 }
 
-
+void IOThread::join() {
+  pthread_join(m_thread, NULL);
+}
 
 }
