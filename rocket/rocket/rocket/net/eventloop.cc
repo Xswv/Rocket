@@ -57,6 +57,8 @@ EventLoop::EventLoop() {
   }
 
   initWakeUpFdEevent();
+  initTimer();
+
   INFOLOG("succ create event loop in thread %d", m_thread_id);
   t_current_eventloop = this;
 }
@@ -67,6 +69,20 @@ EventLoop::~EventLoop() {
     delete m_wakeup_fd_event;
     m_wakeup_fd_event = NULL;
   }
+  if (m_timer) {
+    delete m_timer;
+    m_timer = NULL;
+  }
+}
+
+
+void EventLoop::initTimer() {
+  m_timer = new Timer();
+  addEpollEvent(m_timer);
+}
+
+void EventLoop::addTimerEvent(TimerEvent::s_ptr event) {
+  m_timer->addTimerEvent(event);
 }
 
 void EventLoop::initWakeUpFdEevent() {
@@ -106,6 +122,10 @@ void EventLoop::loop() {
       }
     }
 
+    // 如果有定时任务需要执行，那么执行
+    // 1. 怎么判断一个定时任务需要执行？ （now() > TimerEvent.arrtive_time）
+    // 2. arrtive_time 如何让 eventloop 监听
+
     int timeout = g_epoll_max_timeout; 
     epoll_event result_events[g_epoll_max_events];
     // DEBUGLOG("now begin to epoll_wait");
@@ -123,7 +143,7 @@ void EventLoop::loop() {
           continue;
         }
 
-        if (trigger_event.events | EPOLLIN) { 
+        if (trigger_event.events & EPOLLIN) { 
 
           DEBUGLOG("fd %d trigger EPOLLIN event", fd_event->getFd())
           addTask(fd_event->handler(FdEvent::IN_EVENT));
@@ -189,6 +209,15 @@ void EventLoop::addTask(std::function<void()> cb, bool is_wake_up /*=false*/) {
 
 bool EventLoop::isInLoopThread() {
   return getThreadId() == m_thread_id;
+}
+
+
+EventLoop* EventLoop::GetCurrentEventLoop() {
+  if (t_current_eventloop) {
+    return t_current_eventloop;
+  }
+  t_current_eventloop = new EventLoop();
+  return t_current_eventloop;
 }
 
 }
