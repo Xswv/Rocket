@@ -17,17 +17,16 @@
 
 
 
-#include <exception>
 #include <string>
 #include <memory>
 #include <sstream>
-#include "rocket/common/log.h"
-
+#include <rocket/common/exception.h>
+#include <rocket/common/log.h>
 
 
 namespace ${PROJECT_NAME} {
 
-class BusinessException : public std::exception {
+class BusinessException : public rocket::RocketException {
  public:
 
   BusinessException(long long code, const std::string& err_info, const std::string& file_name, int line):
@@ -38,6 +37,14 @@ class BusinessException : public std::exception {
 
   ~BusinessException() {
   
+  }
+
+  void handle() override {
+    rocket::RpcInterface* interface = rocket::RunTime::GetRunTime()->m_rpc_interface;
+    if (interface != NULL) {
+      interface->setError(m_error_code, m_error_info);
+    }
+
   }
 
   const char* what() {
@@ -61,10 +68,13 @@ class BusinessException : public std::exception {
   }
 
  private:
+
   long long m_error_code {0};
+
   std::string m_error_info;
 
   std::string m_file_name;
+
   int m_line {0};
 
 };

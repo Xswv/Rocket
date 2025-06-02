@@ -85,7 +85,7 @@ void test_rpc_channel() {
   controller->SetMsgId("99998888");
   controller->SetTimeout(10000);
 
-  std::shared_ptr<rocket::RpcClosure> closure = std::make_shared<rocket::RpcClosure>([request, response, channel, controller]() mutable {
+  std::shared_ptr<rocket::RpcClosure> closure = std::make_shared<rocket::RpcClosure>(nullptr, [request, response, channel, controller]() mutable {
     if (controller->GetErrorCode() == 0) {
       INFOLOG("call rpc success, request[%s], response[%s]", request->ShortDebugString().c_str(), response->ShortDebugString().c_str());
       // 执行业务逻辑
@@ -100,25 +100,21 @@ void test_rpc_channel() {
     }
   
     INFOLOG("now exit eventloop");
-    channel->getTcpClient()->stop();
+    // channel->getTcpClient()->stop();
     channel.reset();
   });
 
+  CALLRPRC("127.0.0.1:12346", Order_Stub, makeOrder, controller, request, response, closure);
 
-  // channel->Init(controller, request, response, closure);
-
-  // Order_Stub stub(channel.get());
-
-  // stub.makeOrder(controller.get(), request.get(), response.get(), closure.get());
-
-  CALLRPRC("127.0.0.1:12346", makeOrder, controller, request, response, closure);
+  // xxx
+  // 协程
 }
 
 int main() {
 
-  rocket::Config::SetGlobalConfig("../conf/rocket.xml");
+  rocket::Config::SetGlobalConfig(NULL);
 
-  rocket::Logger::InitGlobalLogger();
+  rocket::Logger::InitGlobalLogger(0);
 
   // test_tcp_client();
   test_rpc_channel();

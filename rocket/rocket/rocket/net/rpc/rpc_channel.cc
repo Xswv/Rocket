@@ -13,6 +13,7 @@
 namespace rocket {
 
 RpcChannel::RpcChannel(NetAddr::s_ptr peer_addr) : m_peer_addr(peer_addr) {
+  INFOLOG("RpcChannel");
   m_client = std::make_shared<TcpClient>(m_peer_addr);
 }
 
@@ -82,6 +83,13 @@ void RpcChannel::CallMethod(const google::protobuf::MethodDescriptor* method,
       ERRORLOG("%s | connect error, error coode[%d], error info[%s], peer addr[%s]", 
         req_protocol->m_msg_id.c_str(), my_controller->GetErrorCode(), 
         my_controller->GetErrorInfo().c_str(), channel->getTcpClient()->getPeerAddr()->toString().c_str());
+
+      // 取消定时任务
+      channel->getTimerEvent()->setCancled(true);
+      if (channel->getClosure()) {
+        channel->getClosure()->Run();
+      }
+      channel.reset();
       return;
     }
 
