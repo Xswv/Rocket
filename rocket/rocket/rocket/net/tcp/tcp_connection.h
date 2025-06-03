@@ -47,6 +47,8 @@ class TcpConnection {
 
   void clear();
 
+  int getFd();
+
   // 服务器主动关闭连接
   void shutdown();
 
@@ -65,6 +67,8 @@ class TcpConnection {
   NetAddr::s_ptr getLocalAddr();
 
   NetAddr::s_ptr getPeerAddr();
+
+  void reply(std::vector<AbstractProtocol::s_ptr>& replay_messages);
 
  private:
 
